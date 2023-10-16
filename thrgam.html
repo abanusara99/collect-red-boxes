@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Collecting Game</title>
+    <style>
+        canvas {
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Collect Red Boxes</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <button id="replayButton" style="display: none;">Replay</button>
+    <button id="quitButton" style="display: none;">Quit</button>
+    <div id="timer">Time Left: 00:30:00</div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const character = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 30,
+            width: 30,
+            height: 30,
+        };
+
+        const objects = [];
+        const maxObjects = 30; // Set to the number of balls you want to catch
+        let score = 0; // Track the number of caught balls
+        let timeLeft = 30 * 60;
+        const replayButton = document.getElementById("replayButton");
+        const quitButton = document.getElementById("quitButton");
+        const timerDisplay = document.getElementById("timer");
+        let gameOver = false;
+
+        function drawCharacter() {
+            ctx.fillStyle = "blue";
+            ctx.fillRect(character.x, character.y, character.width, character.height);
+        }
+
+        function drawObjects() {
+            ctx.fillStyle = "red";
+            objects.forEach((object) => {
+                ctx.fillRect(object.x, object.y, object.width, object.height);
+            });
+        }
+
+        function moveCharacter(event) {
+            if (!gameOver) {
+                const canvasRect = canvas.getBoundingClientRect();
+                character.x = event.clientX - canvasRect.left - character.width / 2;
+            }
+        }
+
+        function spawnObject() {
+            if (!gameOver && objects.length < maxObjects) {
+                const object = {
+                    x: Math.random() * (canvas.width - 20),
+                    y: 0,
+                    width: 20,
+                    height: 20,
+                };
+                objects.push(object);
+            }
+        }
+
+        function updateTimerDisplay() {
+            if (!gameOver) {
+                const hours = Math.floor(timeLeft / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                const seconds = timeLeft % 60;
+                timerDisplay.textContent = `Time Left: ${hours}:${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameLoop);
+            replayButton.style.display = "block";
+            quitButton.style.display = "block";
+
+            if (score === maxObjects) {
+                alert(`Congratulations! You caught all the objects. Your score: ${score}`);
+            } else if (score > 0) {
+                alert(`Game Over. You missed ${maxObjects - score} balls. Your score: ${score}`);
+            } else {
+                alert(`Game Over. You didn't catch any objects. Score: 0`);
+            }
+            gameOver = true;
+        }
+
+        function update() {
+            if (!gameOver) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                drawCharacter();
+                drawObjects();
+
+                objects.forEach((object, index) => {
+                    object.y += 2;
+
+                    if (
+                        object.x < character.x + character.width &&
+                        object.x + object.width > character.x &&
+                        object.y < character.y + character.height &&
+                        object.y + object.height > character.y
+                    ) {
+                        objects.splice(index, 1);
+                        score++;
+                    }
+
+                    if (object.y > canvas.height) {
+                        objects.splice(index, 1);
+                    }
+                });
+
+                timeLeft -= 1;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0 || score >= maxObjects) {
+                    endGame();
+                }
+            }
+        }
+
+        canvas.addEventListener("mousemove", moveCharacter);
+        setInterval(spawnObject, 2000);
+
+        const gameLoop = setInterval(update, 1000 / 60);
+
+        replayButton.addEventListener("click", function () {
+            window.location.reload();
+        });
+
+        quitButton.addEventListener("click", function () {
+            window.close();
+        });
+    </script>
+</body>
+</html>
